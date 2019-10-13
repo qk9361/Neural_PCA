@@ -10,43 +10,57 @@ import h5py
 import time
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-features, labels = make_blobs(n_samples = 10000, n_features = 4, centers =[
-[0, 0, 0, 0], [10, 10, 10, 10], [10, 20, 40, 80], [10, 30, 90, 270]], cluster_std = [0.1, 0.2, 0.2, 0.2],
-random_state = 9)
+# features, labels = make_blobs(n_samples = 10000, n_features = 4, centers =[
+# [0, 0, 0, 0], [10, 10, 10, 10], [10, 20, 40, 80], [10, 30, 90, 270]], cluster_std = [0.1, 0.2, 0.2, 0.2],
+# random_state = 9)
+#
+# print(features.shape, type(features))
+#
+# np.random.shuffle(features)
+#
+# pca = PCA(n_components = 2)
+# pca.fit(features)
+# print(pca.explained_variance_ratio_)
+# print(pca.explained_variance_)
+#
+# labels = pca.fit_transform(features)
+# print(labels.shape, type(labels))
+# print(labels[0:10,:])
 
-print(features.shape, type(features))
+# f = h5py.File('sim_data', 'w')
+# f.create_dataset('features', data = features)
+# f.create_dataset('labels', data = labels)
+# f.close()
 
-np.random.shuffle(features)
-
-pca = PCA(n_components = 2)
-pca.fit(features)
-print(pca.explained_variance_ratio_)
-print(pca.explained_variance_)
-
-labels = pca.fit_transform(features)
-print(labels.shape, type(labels))
-print(labels[0:10,:])
-
-f = h5py.File('sim_data', 'w')
-f.create_dataset('features', data = features)
-f.create_dataset('labels', data = labels)
+f = h5py.File('sim_data.h5', 'r')
+features = np.array(f['features'])
+labels = np.array(f['labels'])
 f.close()
 
-in_feature = 4
-out_feature = 2
-hid_feature1 = 200
+in_feature = 2
+out_feature = 4
+hid_feature1 = 300
+hid_feature2 = 600
+hid_feature3 = 300
 
-net = nn.Sequential(
-                    nn.Linear(in_feature, hid_feature1),
+net = nn.Sequential(nn.Linear(in_feature, hid_feature1),
                     nn.Sigmoid(),
-                    nn.Linear(hid_feature1, out_feature)
+                    # nn.BatchNorm1d(hid_feature1),
+                    nn.Linear(hid_feature1, hid_feature2),
+                    nn.Sigmoid(),
+                    # nn.BatchNorm1d(hid_feature2),
+                    nn.Linear(hid_feature2, hid_feature3),
+                    nn.Sigmoid(),
+                    # nn.BatchNorm1d(hid_feature3),
+                    nn.Linear(hid_feature3, out_feature)
                     )
+
 features = torch.tensor(features, dtype = torch.float)
 label = torch.tensor(labels, dtype = torch.float)
 train_set = Data.TensorDataset(features[0:8000,:], label[0:8000,:])
 test_set = Data.TensorDataset(features[8000:-1,:], label[8000:-1,:])
 
-batch_size = 50
+batch_size = 300
 num_workers = 4
 
 train_iter = Data.DataLoader(
@@ -69,7 +83,7 @@ loss = nn.MSELoss()
 
 num_epochs = 50
 
-optimizer = optim.Adam(net.parameters(), lr=0.001)
+optimizer = optim.Adam(net.parameters(), lr=0.001, weight_decay = 0.1)
 print(optimizer)
 
 for epoch in range(1, num_epochs+1):
@@ -94,5 +108,5 @@ xx, yy = iter(test_iter).next()
 xx = xx.to(device)
 dif = net(xx).cpu() - yy
 
-print(dif, '\n', torch.norm(dif))
+print(dif, '\n', torch.norm(dif) / len(yy))
 print(net(xx), '\n', yy)
