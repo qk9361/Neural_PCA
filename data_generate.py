@@ -3,8 +3,8 @@ import random
 import h5py
 import math
 
-x = np.random.normal(0, 10, 1000).T
-y = np.random.normal(0, 5, 1000).T
+x = np.random.normal(0, 10, 10000).T
+y = np.random.normal(0, 5, 10000).T
 
 features = np.stack([x, y], axis = 1)
 features0 = features
@@ -13,7 +13,7 @@ print(features.shape, '\n', features[0:10])
 eig_vec = np.array([[1, 0], [0, 1]], dtype = np.float)
 print(eig_vec.shape, '\n', eig_vec)
 
-labels = np.tile(eig_vec.ravel(), (1000,1))
+labels = np.tile(eig_vec.ravel(), (10000,1))
 print(labels.shape, '\n', labels)
 
 data = locals()
@@ -26,7 +26,7 @@ for i in range(10):
     print('rot shape ', rot.shape)
     data['data' + str(i)] = np.dot(features0, rot)
     print('data shape: ', data['data' + str(i)].shape)
-    labels_rot = np.tile(rot.ravel(), (1000,1))
+    labels_rot = np.tile(rot.ravel(), (10000,1))
     features = np.vstack((features, data['data' + str(i)]))
     labels = np.vstack((labels, labels_rot))
 

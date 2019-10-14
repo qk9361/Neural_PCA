@@ -38,11 +38,6 @@ features = np.array(f['features'])
 labels = np.array(f['labels'])
 f.close()
 
-in_feature = 2
-out_feature = 4
-hid_feature1 = 300
-hid_feature2 = 600
-hid_feature3 = 300
 
 # from scipy import io
 # features = io.loadmat('features.mat')
@@ -58,10 +53,11 @@ hid_feature3 = 300
 # labels = io.loadmat('score.mat')['score'][:,0:2]
 # print(labels.shape, type(labels))
 
-in_feature = 4
-out_feature = 8
+in_feature = 2
+out_feature = 4
 hid_feature1 = 200
->>>>>>> c10dafe37c4438da822ea82b93c699513d3220a4
+hid_feature2 = 400
+hid_feature3 = 200
 
 net = nn.Sequential(nn.Linear(in_feature, hid_feature1),
                     nn.Sigmoid(),
@@ -77,10 +73,10 @@ net = nn.Sequential(nn.Linear(in_feature, hid_feature1),
 
 features = torch.tensor(features, dtype = torch.float)
 label = torch.tensor(labels, dtype = torch.float)
-train_set = Data.TensorDataset(features[0:8000,:], label[0:8000,:])
-test_set = Data.TensorDataset(features[8000:-1,:], label[8000:-1,:])
+train_set = Data.TensorDataset(features[0:80000,:], label[0:80000,:])
+test_set = Data.TensorDataset(features[80000:-1,:], label[80000:-1,:])
 
-batch_size = 300
+batch_size = 200
 num_workers = 4
 
 train_iter = Data.DataLoader(
