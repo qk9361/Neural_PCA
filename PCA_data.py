@@ -27,16 +27,12 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # print(labels.shape, type(labels))
 # print(labels[0:10,:])
 
-<<<<<<< HEAD
 # f = h5py.File('sim_data', 'w')
-=======
 # f = h5py.File('sim_data.h5', 'w')
->>>>>>> c10dafe37c4438da822ea82b93c699513d3220a4
 # f.create_dataset('features', data = features)
 # f.create_dataset('labels', data = labels)
 # f.close()
 
-<<<<<<< HEAD
 f = h5py.File('sim_data.h5', 'r')
 features = np.array(f['features'])
 labels = np.array(f['labels'])
@@ -47,17 +43,17 @@ out_feature = 4
 hid_feature1 = 300
 hid_feature2 = 600
 hid_feature3 = 300
-=======
-from scipy import io
-features = io.loadmat('features.mat')
-features = features['features']
-print(features.shape, type(features))
+
+# from scipy import io
+# features = io.loadmat('features.mat')
+# features = features['features']
+# print(features.shape, type(features))
 
 # use eigen vector as output
-eig_vec = io.loadmat('eig_vec.mat')['eig_vecCopy'][:,0:2].T.ravel()
-print(eig_vec.shape)
-labels = np.ones((10000,1)) * eig_vec
-print(labels.shape, labels[0:10,:])
+# eig_vec = io.loadmat('eig_vec.mat')['eig_vecCopy'][:,0:2].T.ravel()
+# print(eig_vec.shape)
+# labels = np.ones((10000,1)) * eig_vec
+# print(labels.shape, labels[0:10,:])
 
 # labels = io.loadmat('score.mat')['score'][:,0:2]
 # print(labels.shape, type(labels))
@@ -132,9 +128,6 @@ xx, yy = iter(test_iter).next()
 xx = xx.to(device)
 dif = net(xx).cpu() - yy
 
-<<<<<<< HEAD
 print(dif, '\n', torch.norm(dif) / len(yy))
-=======
 print(dif, '\n', torch.norm(dif), torch.norm(yy))
->>>>>>> c10dafe37c4438da822ea82b93c699513d3220a4
 print(net(xx), '\n', yy)
