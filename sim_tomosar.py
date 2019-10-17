@@ -10,6 +10,7 @@ import math
 import cmath
 from scipy import io
 import matplotlib.pyplot as plt
+import myfunc as mf
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def adjust_lr(optimizer, epoch, init_lr):
@@ -40,67 +41,27 @@ r1_ravel = np.hstack([r1_r, r1_i])
 r2_r = np.real(r2)
 r2_i = np.imag(r2)
 r2_ravel = np.hstack([r2_r, r2_i])
-print(r1_ravel.shape, r2_ravel.shape)
+r_ravel = np.hstack([r1_ravel, r2_ravel])
+print(r1_ravel.shape, r2_ravel.shape, r_ravel.shape)
 
 in_features = 13
 out_features = 13
-hid_feature1 = 1000
-hid_feature2 = 2000
-hid_feature3 = 3000
-hid_feature4 = 2000
-hid_feature5 = 1000
+hid_feature1 = 100
+hid_feature2 = 200
+hid_feature3 = 300
+hid_feature4 = 200
+hid_feature5 = 100
 
-class my_net(nn.Module):
-    def __init__(self):
-        super(my_net, self).__init__()
-        self.dense1 = nn.Sequential(nn.Linear(in_features, hid_feature1),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature1),
-                                    nn.Linear(hid_feature1, hid_feature2),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature2),
-                                    nn.Linear(hid_feature2, hid_feature3),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature3),
-                                    nn.Linear(hid_feature3, hid_feature4),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature4),
-                                    nn.Linear(hid_feature4, hid_feature5),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature5),
-                                    nn.Linear(hid_feature5, out_features),
-                                    )
-        self.dense2 = nn.Sequential(nn.Linear(in_features, hid_feature1),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature1),
-                                    nn.Linear(hid_feature1, hid_feature2),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature2),
-                                    nn.Linear(hid_feature2, hid_feature3),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature3),
-                                    nn.Linear(hid_feature3, hid_feature4),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature4),
-                                    nn.Linear(hid_feature4, hid_feature5),
-                                    nn.Sigmoid(),
-                                    # nn.BatchNorm1d(hid_feature5),
-                                    nn.Linear(hid_feature5, out_features),
-                                    )
-    def forward(self, x1, x2):
-        y1 = self.dense1(x1)
-        y2 = self.dense2(x2)
-        y = torch.cat((y1, y2), dim = 1)
-        return y
-
-net = my_net()
+net = mf.auto_net()
 
 g_ravel = torch.tensor(g_ravel, dtype = torch.float)
 r1_ravel = torch.tensor(r1_ravel, dtype = torch.float)
 r2_ravel = torch.tensor(r2_ravel, dtype = torch.float)
+r_ravel = torch.tensor(r_ravel, dtype = torch.float)
 
 # train_set = Data.TensorDataset(g_ravel[0:900,:], r1_ravel[0:900,:])
-train_set = Data.TensorDataset(g_ravel, r1_ravel)
+# train_set = Data.TensorDataset(g_ravel, r1_ravel)
+train_set = Data.TensorDataset(g_ravel, r_ravel)
 test_set = Data.TensorDataset(g_ravel[900:-1,:], r1_ravel[900:-1,:])
 
 batch_size = 20
@@ -135,11 +96,11 @@ for epoch in range(1, num_epochs+1):
     adjust_lr(optimizer, epoch, init_lr)
     for x, y in train_iter:
         y = y.to(device)
-        x1 = x[:,0:13].to(device)
-        x2 = x[:,13:26].to(device)
+        x_r = x[:,0:13].to(device)
+        x_i = x[:,13:26].to(device)
         # x = F.normalize(x, dim = 0)
         # print(x)
-        y_hat = net(x1,x2)
+        y_hat = net(x_r,x_i)
         l = loss(y_hat, y)
         optimizer.zero_grad()
         l.backward()
@@ -152,7 +113,7 @@ for epoch in range(1, num_epochs+1):
 
 # xx, yy = iter(test_iter).next()
 # xx, yy = iter(train_iter).next()
-dataset = Data.TensorDataset(g_ravel, r1_ravel)
+dataset = Data.TensorDataset(g_ravel, r_ravel)
 data_eval = Data.DataLoader(
                             dataset = dataset,
                             batch_size = 1000,
@@ -165,28 +126,55 @@ net.to('cpu')
 yy_hat = net(xx1, xx2)
 yy = yy.detach().numpy()
 yy_hat = yy_hat.detach().numpy()
+print(yy.shape, yy_hat.shape)
 
-yy_r = yy[:,0:13]
-yy_i = yy[:,13:26]
-yy_hat_r = yy_hat[:,0:13]
-yy_hat_i = yy_hat[:,13:26]
+yy_r1 = yy[:,0:13]
+yy_i1 = yy[:,13:26]
+yy_hat_r1 = yy_hat[:,0:13]
+yy_hat_i1 = yy_hat[:,13:26]
 
-yyy = yy_r + yy_i * cmath.sqrt(-1)
-yyy_hat = yy_hat_r + yy_hat_i * cmath.sqrt(-1)
+yy_r2 = yy[:,26:39]
+yy_i2 = yy[:,39:52]
+yy_hat_r2 = yy_hat[:,26:39]
+yy_hat_i2 = yy_hat[:,39:52]
 
-angbias =  np.imag( np.log( np.sum((yyy_hat * np.conj(yyy)), axis=1) / np.sum((abs(yyy_hat) * abs(yyy)), axis=1) ) ) / math.pi * 180
-print(angbias, angbias.shape)
+yyy1 = yy_r1 + yy_i1 * cmath.sqrt(-1)
+yyy_hat1 = yy_hat_r1 + yy_hat_i1 * cmath.sqrt(-1)
+
+yyy2 = yy_r2 + yy_i2 * cmath.sqrt(-1)
+
+yyy_hat2 = yy_hat_r2 + yy_hat_i2 * cmath.sqrt(-1)
+
+angbias1 =  np.imag( np.log( np.sum((yyy_hat1 * np.conj(yyy1)), axis=1) / np.sum((abs(yyy_hat1) * abs(yyy1)), axis=1) ) ) / math.pi * 180
+# print(angbias, angbias.shape)
+angbias2 =  np.imag( np.log( np.sum((yyy_hat2 * np.conj(yyy2)), axis=1) / np.sum((abs(yyy_hat2) * abs(yyy2)), axis=1) ) ) / math.pi * 180
+# print(angbias, angbias.shape)
+# print(yy_hat[0,:], '\n', yy[0,:], '\n', yy_hat[0,:] - yy[0,:])
+
+# plt.figure()
+# plt.subplot(2,1,1)
+# plt.plot(range(1,1001), angbias1)
+# plt.xlabel('simulated samples')
+# plt.ylabel('angbias [deg] for the first steering vector r1')
+# plt.subplot(2,1,2)
+# plt.plot(range(1,1001), angbias2)
+# plt.xlabel('simulated samples')
+# plt.ylabel('angbias [deg] for the first steering vector r2')
+# plt.show()
+
+# print(yy_hat[0,:], '\n', yy[0,:], '\n', yy_hat[0,:] - yy[0,:])
+angbias3 =  np.arccos( abs( np.sum((yyy_hat1 * np.conj(yyy1)), axis=1) / np.sum((abs(yyy_hat1) * abs(yyy1)), axis=1) ) ) / math.pi * 180
+print(angbias3, angbias3.shape)
+angbias4 =  np.arccos( abs( np.sum((yyy_hat2 * np.conj(yyy2)), axis=1) / np.sum((abs(yyy_hat2) * abs(yyy2)), axis=1) ) ) / math.pi * 180
+print(angbias4, angbias4.shape)
 
 plt.figure()
-plt.plot(range(1,1001), angbias)
+plt.subplot(2,1,1)
+plt.plot(range(1,1001), angbias3)
 plt.xlabel('simulated samples')
-plt.ylabel('angbias for the first steering vector r1')
+plt.ylabel('angbias [deg] for the first steering vector r1')
+plt.subplot(2,1,2)
+plt.plot(range(1,1001), angbias4)
+plt.xlabel('simulated samples')
+plt.ylabel('angbias [deg] for the first steering vector r2')
 plt.show()
-# angbias1 = []
-# for i in angbias:
-#     angbias1.append(cmath.acos(i))
-#
-# angbias1 = np.array(angbias1)
-# print(angbias1)
-# angbias2 = angbias / cmath.pi * 180
-# print(angbias2)
